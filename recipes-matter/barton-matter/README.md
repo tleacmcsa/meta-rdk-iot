@@ -1,25 +1,32 @@
-# Barton Matter Reference
-This recipe serves as a reference implementation for integrating Matter with
-Barton in Yocto-based RDK environments. This reference uses a customized ZAP
-file to generate the required source code (see Pregenerated Code of
-[Usage Guidelines](#usage-guidelines)) to produce a
-static library that is linked with the barton recipe.
+# Barton Matter
+This recipe builds the Matter SDK for use by Barton, providing the base
+implementation for integrating Matter with the Barton IoT Platform in Yocto-based
+RDK environments. It is designed to be extended by client layers using bbappend
+files, allowing each product to supply its own ZAP file and pregenerated Matter
+source code. The base recipe manages integration and build logic, while client
+customizations define device-specific Matter configurations and generated files.
 
-## Overview
-The `barton-matter-reference` recipe provides a template for RDK components that
-need to interface with Matter devices through the Barton IoT Platform. It
-demonstrates the proper configuration, dependencies, and integration points
-required for Matter support.
+## Barton Matter Example
+The `barton-matter-example` recipe serves as a template for clients to extend
+the base Barton Matter integration. It demonstrates how to provide custom ZAP
+files, pregenerated Matter source code, and other product-specific files needed
+to enable Matter device support through the Barton IoT Platform.
+
+To properly implement Matter with Barton, please follow the instructions in the 
+`Pregenerated Code` section of the [Usage Guidelines](#usage-guidelines). This 
+step is critical for successful integration.
 
 ### Building Matter in RDK Yocto
 Currently, Matter cannot be built as defined in Matter documentation within the
 RDK Yocto build system due to specific limitations, these include (but are not
 limited to):
 
-- Matter's build process typically requires running `activate.sh`/`bootstrap.sh`
-  scripts which themselves depend on Python's `ensurepip` module and Python
-  3.10+. Yocto 4 (Kirkstone) oe_core provides Python 3.8 and does not include
-  the `ensurepip` module.
+- Matter's build process typically requires creating a Python virtual environment
+  as part of its `activate.sh/bootstrap.sh` scripts. However, Yocto's build
+  environment does not support creating or using Python virtual environments
+  reliably due to its isolated and reproducible build constraints. As a result,
+  the standard Matter build and code generation steps cannot be run natively
+  within Yocto.
 
 This reference implementation includes custom CMake configurations that work
 around these limitations, allowing Matter components to be integrated into RDK
@@ -59,18 +66,29 @@ script directly. Therefore, code generation from your ZAP file must happen
 before the build process begins. This "pregeneration" step creates the required
 `zzz_generated` directory containing all Matter-generated code needed for
 successful compilation. To streamline this process, helper scripts are included
-in this recipe.
+in the `files/scripts` directory.
 
-After creating or updating your ZAP file to define your Matter configuretion,
-simply execute:
+After creating or updating your ZAP file to define your Matter configuration,
+ensure your Barton Matter recipe has the following structure:
 
-```bash
-files/scripts/generate_zzz.sh
+```
+your-layer/
+└── your-barton-matter-recipe/
+    ├── barton-matter_*.bbappend
+    └── files/
+        └── your-zap-file.zap
 ```
 
-This will create all necessary generated files and place them in the correct
-location for the build system to find. Docker is mandatory for this scripts'
-execution.
+Then run the `generate_zzz.sh` script and pass the path to your zap file as the
+first argument:
+
+```bash
+files/scripts/generate_zzz.sh /path/to/your-layer/your-barton-matter-recipe/files/your-zap-file.zap
+```
+
+This will generate the zzz_generated.tar.gz file in the files/ directory containing
+the zap file, ready for use by the Yocto build system.
+**Note**: Docker is required to run this script.
 
 3. **Recipe Usage**
 
@@ -87,10 +105,10 @@ example-layer/
 └── example-component/
     ├── example-component_x.y.z.bb
     └── barton-matter/
-        ├── barton-matter_x.y.z.bb
+        ├── barton-matter_x.y.z.bbappend
         └── files/
-            ├── example-component.zap
-            └── [other barton needed files]
+            ├── your-zap-file.zap
+            └── zzz_generated.tar.gz
 ```
 
 ## Further Documentation
