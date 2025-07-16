@@ -34,6 +34,7 @@ function(barton_build MATTER_CONF_DIR)
     execute_process(COMMAND ${CMAKE_CURRENT_LIST_DIR}/activate.sh)
 
     configure_file(${CMAKE_CURRENT_LIST_DIR}/BartonProjectConfig.in BartonProjectConfig.h @ONLY)
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/BartonProjectConfigCustom.in BartonProjectConfigCustom.h @ONLY)
 
     matter_common_gn_args(
         DEBUG       CONFIG_CHIP_DEBUG
@@ -111,6 +112,7 @@ function(barton_build MATTER_CONF_DIR)
     install(FILES ${MATTER_LIBRARIES} DESTINATION lib)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/libBartonMatter.a DESTINATION lib)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BartonProjectConfig.h DESTINATION ${MATTER_HEADER_DESTINATION})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BartonProjectConfigCustom.h DESTINATION ${MATTER_HEADER_DESTINATION})
 
     file(GLOB_RECURSE BARTON_HEADERS ${MATTER_ROOT}/third_party/barton/*.h*)
     install(FILES ${BARTON_HEADERS} DESTINATION ${MATTER_HEADER_DESTINATION})
