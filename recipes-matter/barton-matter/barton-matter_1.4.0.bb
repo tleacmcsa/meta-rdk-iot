@@ -29,6 +29,7 @@ SRC_URI = "git://github.com/project-chip/connectedhomeip.git;protocol=https;name
 # Always coordinate Matter and Barton version updates to maintain compatibility.
 SRCREV = "43aa98c2d30ee547c6b587b9de7bbb794f175ece"
 S = "${WORKDIR}/git"
+PR="r1"
 
 inherit cmake pkgconfig
 
@@ -59,15 +60,23 @@ MATTER_ZZZ_GENERATED ?= ""
 python do_check_matter_configuration() {
     zap_file = d.getVar('MATTER_ZAP_FILE')
     zzz_generated = d.getVar('MATTER_ZZZ_GENERATED')
+    project_custom = d.getVar('MATTER_CUSTOM_PROJECT_CONFIG')
 
     error_msg = []
-    
+    warn_msg = []
+
     if not zap_file:
         error_msg.append("MATTER_ZAP_FILE is not defined")
-    
+
     if not zzz_generated:
         error_msg.append("MATTER_ZZZ_GENERATED is not defined")
-    
+
+    if not project_custom:
+        warn_msg.append("MATTER_CUSTOM_PROJECT_CONFIG is not defined, continuing with defaults.")
+
+    if warn_msg:
+        bb.warn("%s" % "\n".join(warn_msg))
+
     if error_msg:
         bb.fatal("""
 ERROR: Missing required Matter configuration variables.
@@ -87,6 +96,12 @@ do_configure_prepend() {
     # Copy the client's Matter configuration files provided in the bbappend
     cp ${MATTER_ZAP_FILE} ${S}/third_party/barton/
     cp -r ${MATTER_ZZZ_GENERATED} ${S}/third_party/barton/
+    if [ -f "${MATTER_CUSTOM_PROJECT_CONFIG}" ]; then
+        cp ${MATTER_CUSTOM_PROJECT_CONFIG} ${S}/third_party/barton/BartonProjectConfigCustom.in
+    else
+        # create an empty one
+        touch ${S}/third_party/barton/BartonProjectConfigCustom.in
+    fi
 
     export SSH_AUTH_SOCK=${SSH_AUTH_SOCK}
     cd ${WORKDIR}/git
